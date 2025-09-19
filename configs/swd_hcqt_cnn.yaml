@@ -1,0 +1,72 @@
+data:
+  train_val_feature_folders:
+    - ../datasets/Schubert_Winterreise_Dataset_v2-1/99_Features/hcqt_h2205_b36_o7_h1/
+  train_val_label_folders:
+    - ../datasets/Schubert_Winterreise_Dataset_v2-1/02_Annotations/ann_audio_localkey-ann3/
+  train_val_datasets:
+    - swd
+
+  test_feature_folders:
+    - ../datasets/Schubert_Winterreise_Dataset_v2-1/99_Features/hcqt_h2205_b36_o7_h1/
+  test_label_folders:
+    - ../datasets/Schubert_Winterreise_Dataset_v2-1/02_Annotations/ann_audio_localkey-ann3/
+  test_datasets:
+    - swd
+
+  feature_fps: 5
+  label_fps: 5
+
+  seg_length: 20.0
+  seg_shift_length: 1.0
+
+  batch_size: 128
+  num_workers: 32
+
+model:
+  feature:
+    name: hcqt_normalizer
+    args:
+      bins_per_octave: &bins_per_octave 24
+      num_octaves: &num_octaves 5
+
+  backbone:
+    name: cnn
+    args:
+      in_channels: 6
+      num_channels: 8
+      dropout: 0.3
+
+trainer:
+  args:
+    max_epochs: 100
+    max_steps: -1
+    gradient_clip_val: 1.0
+
+    accelerator: gpu
+    devices: 1
+    # precision: bf16-mixed
+
+    check_val_every_n_epoch: 1
+    log_every_n_steps: 20
+
+    log_path: ${REPO_DIR}/checkpoints/swd_hcqt_cnn/{run_id}
+
+  logger:
+    project: cross_version_baselines
+    name: swd_hcqt_cnn
+    save_dir: ${REPO_DIR}/wandb_log
+
+  periodic_checkpoint:
+    filename: epoch={epoch}-step={step}-loss={loss/val:.4f}-acc_lke={acc/val_lke:.4f}
+    auto_insert_metric_name: False
+    save_top_k: -1
+    every_n_epochs: 10
+
+  best_checkpoint:
+    filename: best-epoch={epoch}-step={step}-loss={loss/val:.4f}-acc_lke={acc/val_lke:.4f}
+    auto_insert_metric_name: False
+    save_top_k: 1
+
+    monitor: acc/val_lke
+    mode: max
+    every_n_epochs: 1

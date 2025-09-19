@@ -1,0 +1,11 @@
+__pycache__
+checkpoints
+checkpoints.*
+
+*.ipynb
+.ipynb_checkpoints
+
+wandb_log
+
+inference_output
+results

@@ -1,0 +1,77 @@
+data:
+  train_val_feature_folders:
+    - ${DATASET_DIR}/Schubert_Winterreise_Dataset_v2-1/99_Features/hcqt_h2205_b36_o7_h1/
+  train_val_label_folders:
+    - ${DATASET_DIR}/Schubert_Winterreise_Dataset_v2-1/02_Annotations/ann_audio_localkey-ann3/
+  train_val_datasets:
+    - swd
+
+  test_feature_folders:
+    - ${DATASET_DIR}/Schubert_Winterreise_Dataset_v2-1/99_Features/hcqt_h2205_b36_o7_h1/
+  test_label_folders:
+    - ${DATASET_DIR}/Schubert_Winterreise_Dataset_v2-1/02_Annotations/ann_audio_localkey-ann3/
+  test_datasets:
+    - swd
+
+  feature_fps: 5
+  label_fps: 5
+
+  seg_length: 20.0
+  seg_shift_length: 1.0
+
+  batch_size: 128
+  num_workers: 0
+
+model:
+  feature:
+    name: hcqt_normalizer
+    args:
+      bins_per_octave: &bins_per_octave 36
+      num_octaves: &num_octaves 6
+
+  backbone:
+    name: octave
+    args:
+      num_channels: 32
+      bins_per_octave: 36
+      num_octaves: 6
+      dropout: 0.2
+
+trainer:
+  args:
+    max_epochs: 100
+    max_steps: -1
+    gradient_clip_val: 1.0
+
+    accelerator: gpu
+    devices: 1
+    # precision: bf16-mixed
+
+    limit_train_batches: 10
+    limit_val_batches: 5
+    limit_test_batches: 5
+
+    check_val_every_n_epoch: 1
+    log_every_n_steps: 20
+
+    log_path: ${REPO_DIR}/checkpoints/swd_octave/{run_id}
+
+  logger:
+    project: cross_version_baselines
+    name: swd_hcqt_cnn
+    save_dir: ${REPO_DIR}/wandb_log
+
+  periodic_checkpoint:
+    filename: epoch={epoch}-step={step}-loss={loss/val:.4f}-recall={recall/val:.4f}
+    auto_insert_metric_name: False
+    save_top_k: -1
+    every_n_epochs: 10
+
+  best_checkpoint:
+    filename: best-epoch={epoch}-step={step}-loss={loss/val:.4f}-recall={recall/val:.4f}
+    auto_insert_metric_name: False
+    save_top_k: 1
+
+    monitor: recall/val
+    mode: max
+    every_n_epochs: 1
